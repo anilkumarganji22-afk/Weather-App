@@ -64,7 +64,7 @@ async function fetchForecast(lat, lon) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,is_day,weathercode,relative_humidity_2m,wind_speed_10m` +
     `&hourly=temperature_2m,weathercode,precipitation_probability` +
-    `&daily=sunrise,sunset,precipitation_probability_max` +
+    `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weathercode,precipitation_probability_max` +
     `&timezone=auto`;
   const res = await fetch(url);
   return res.json();
@@ -128,6 +128,29 @@ function renderHourly(forecast) {
   }
 }
 
+function renderDaily(forecast) {
+  const el = document.getElementById("daily");
+  el.innerHTML = "";
+
+  forecast.daily.time.slice(0, 7).forEach((date, i) => {
+    const day = new Date(date).toLocaleDateString([], { weekday: "short" });
+
+    el.innerHTML += `
+      <div class="day-card">
+        <div class="day-name">${day}</div>
+        <div class="day-icon">
+          ${getWeatherIcon(forecast.daily.weathercode[i])}
+        </div>
+        <div class="day-temp">
+          ${Math.round(forecast.daily.temperature_2m_max[i])}°
+          /
+          ${Math.round(forecast.daily.temperature_2m_min[i])}°
+        </div>
+      </div>
+    `;
+  });
+}
+
 function getWeatherIcon(code) {
   if (code === 0) return "☀️";
   if (code <= 2) return "⛅";
@@ -159,6 +182,7 @@ async function getWeather() {
 
     updateUI(temp, forecast, aqi);
     renderHourly(forecast);  // <-- here is the call for hourly forecast
+    renderDaily(forecast); 
   } catch (e) {
     console.error(e);
     document.querySelector(".city").textContent = "Error loading weather";
